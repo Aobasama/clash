@@ -20,14 +20,21 @@ func urlTestWithTolerance(tolerance uint16) urlTestOption {
 	}
 }
 
+func urlTestWithStatusCodeRequirement(statusPattern string) urlTestOption {
+	return func(u *URLTest) {
+		u.statusPattern = statusPattern
+	}
+}
+
 type URLTest struct {
 	*outbound.Base
-	tolerance  uint16
-	disableUDP bool
-	fastNode   C.Proxy
-	single     *singledo.Single
-	fastSingle *singledo.Single
-	providers  []provider.ProxyProvider
+	tolerance     uint16
+	statusPattern string
+	disableUDP    bool
+	fastNode      C.Proxy
+	single        *singledo.Single
+	fastSingle    *singledo.Single
+	providers     []provider.ProxyProvider
 }
 
 func (u *URLTest) Now() string {
@@ -132,6 +139,11 @@ func parseURLTestOption(config map[string]any) []urlTestOption {
 		opts = append(opts, urlTestWithTolerance(uint16(tolerance)))
 	}
 
+	// accept only status code match the regex
+	if statusPattern, ok := config["status-pattern"].(string); ok {
+		opts = append(opts, urlTestWithStatusCodeRequirement(string(statusPattern)))
+	}
+
 	return opts
 }
 
@@ -148,6 +160,8 @@ func NewURLTest(option *GroupCommonOption, providers []provider.ProxyProvider, o
 		providers:  providers,
 		disableUDP: option.DisableUDP,
 	}
+
+	urlTest.statusPattern = ".*" // by default, we accept all status codes
 
 	for _, option := range options {
 		option(urlTest)

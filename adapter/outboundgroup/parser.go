@@ -21,14 +21,15 @@ var (
 
 type GroupCommonOption struct {
 	outbound.BasicOption
-	Name       string   `group:"name"`
-	Type       string   `group:"type"`
-	Proxies    []string `group:"proxies,omitempty"`
-	Use        []string `group:"use,omitempty"`
-	URL        string   `group:"url,omitempty"`
-	Interval   int      `group:"interval,omitempty"`
-	Lazy       bool     `group:"lazy,omitempty"`
-	DisableUDP bool     `group:"disable-udp,omitempty"`
+	Name          string   `group:"name"`
+	Type          string   `group:"type"`
+	Proxies       []string `group:"proxies,omitempty"`
+	Use           []string `group:"use,omitempty"`
+	URL           string   `group:"url,omitempty"`
+	Interval      int      `group:"interval,omitempty"`
+	Lazy          bool     `group:"lazy,omitempty"`
+	DisableUDP    bool     `group:"disable-udp,omitempty"`
+	StatusPattern string   `group:"status-pattern,omitempty"`
 }
 
 func ParseProxyGroup(config map[string]any, proxyMap map[string]C.Proxy, providersMap map[string]types.ProxyProvider) (C.ProxyAdapter, error) {
@@ -65,7 +66,7 @@ func ParseProxyGroup(config map[string]any, proxyMap map[string]C.Proxy, provide
 
 		// select don't need health check
 		if groupOption.Type == "select" || groupOption.Type == "relay" {
-			hc := provider.NewHealthCheck(ps, "", 0, true)
+			hc := provider.NewHealthCheck(ps, "", 0, true, "")
 			pd, err := provider.NewCompatibleProvider(groupName, ps, hc)
 			if err != nil {
 				return nil, err
@@ -78,7 +79,7 @@ func ParseProxyGroup(config map[string]any, proxyMap map[string]C.Proxy, provide
 				return nil, errMissHealthCheck
 			}
 
-			hc := provider.NewHealthCheck(ps, groupOption.URL, uint(groupOption.Interval), groupOption.Lazy)
+			hc := provider.NewHealthCheck(ps, groupOption.URL, uint(groupOption.Interval), groupOption.Lazy, groupOption.StatusPattern)
 			pd, err := provider.NewCompatibleProvider(groupName, ps, hc)
 			if err != nil {
 				return nil, err

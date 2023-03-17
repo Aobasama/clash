@@ -20,12 +20,13 @@ type HealthCheckOption struct {
 }
 
 type HealthCheck struct {
-	url       string
-	proxies   []C.Proxy
-	interval  uint
-	lazy      bool
-	lastTouch *atomic.Int64
-	done      chan struct{}
+	url           string
+	proxies       []C.Proxy
+	interval      uint
+	lazy          bool
+	lastTouch     *atomic.Int64
+	done          chan struct{}
+	statusPattern string
 }
 
 func (hc *HealthCheck) process() {
@@ -65,7 +66,7 @@ func (hc *HealthCheck) check() {
 		b.Go(p.Name(), func() (any, error) {
 			ctx, cancel := context.WithTimeout(context.Background(), defaultURLTestTimeout)
 			defer cancel()
-			p.URLTest(ctx, hc.url)
+			p.URLTest(ctx, hc.url, hc.statusPattern)
 			return nil, nil
 		})
 	}
@@ -76,13 +77,14 @@ func (hc *HealthCheck) close() {
 	hc.done <- struct{}{}
 }
 
-func NewHealthCheck(proxies []C.Proxy, url string, interval uint, lazy bool) *HealthCheck {
+func NewHealthCheck(proxies []C.Proxy, url string, interval uint, lazy bool, statusPattern string) *HealthCheck {
 	return &HealthCheck{
-		proxies:   proxies,
-		url:       url,
-		interval:  interval,
-		lazy:      lazy,
-		lastTouch: atomic.NewInt64(0),
-		done:      make(chan struct{}, 1),
+		proxies:       proxies,
+		url:           url,
+		interval:      interval,
+		lazy:          lazy,
+		lastTouch:     atomic.NewInt64(0),
+		done:          make(chan struct{}, 1),
+		statusPattern: statusPattern,
 	}
 }

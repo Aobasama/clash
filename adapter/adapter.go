@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"time"
 
 	"github.com/Dreamacro/clash/common/queue"
@@ -101,7 +102,7 @@ func (p *Proxy) MarshalJSON() ([]byte, error) {
 
 // URLTest get the delay for the specified URL
 // implements C.Proxy
-func (p *Proxy) URLTest(ctx context.Context, url string) (delay, meanDelay uint16, err error) {
+func (p *Proxy) URLTest(ctx context.Context, url string, statusPattern string) (delay, meanDelay uint16, err error) {
 	defer func() {
 		p.alive.Store(err == nil)
 		record := C.DelayHistory{Time: time.Now()}
@@ -156,12 +157,24 @@ func (p *Proxy) URLTest(ctx context.Context, url string) (delay, meanDelay uint1
 	if err != nil {
 		return
 	}
+	if statusPattern != "" && statusPattern != ".*" {
+		matched, _ := regexp.MatchString(statusPattern, resp.Status)
+		if !matched {
+			return
+		}
+	}
 	resp.Body.Close()
 	delay = uint16(time.Since(start) / time.Millisecond)
 
 	resp, err = client.Do(req)
 	if err != nil {
 		return
+	}
+	if statusPattern != "" && statusPattern != ".*" {
+		matched, _ := regexp.MatchString(statusPattern, resp.Status)
+		if !matched {
+			return
+		}
 	}
 	resp.Body.Close()
 	meanDelay = uint16(time.Since(start) / time.Millisecond / 2)
