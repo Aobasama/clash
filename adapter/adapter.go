@@ -157,26 +157,26 @@ func (p *Proxy) URLTest(ctx context.Context, url string, statusPattern string) (
 	if err != nil {
 		return
 	}
+	resp.Body.Close()
 	if statusPattern != "" && statusPattern != ".*" {
 		matched, _ := regexp.MatchString(statusPattern, resp.Status)
 		if !matched {
 			return
 		}
 	}
-	resp.Body.Close()
 	delay = uint16(time.Since(start) / time.Millisecond)
 
 	resp, err = client.Do(req)
 	if err != nil {
 		return
 	}
+	resp.Body.Close()
 	if statusPattern != "" && statusPattern != ".*" {
 		matched, _ := regexp.MatchString(statusPattern, resp.Status)
 		if !matched {
 			return
 		}
 	}
-	resp.Body.Close()
 	meanDelay = uint16(time.Since(start) / time.Millisecond / 2)
 
 	return
